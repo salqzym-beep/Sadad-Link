@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سداد لينك</title>
+<style>
+:root{--navy:#192f70;--blue:#25469b;--bg:#f1f4fa;--green:#16834a;--red:#b43b45}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#182c69;padding-bottom:72px}
+.head{background:linear-gradient(130deg,var(--navy),#3157a8);color:white;padding:20px 18px 24px;border-radius:0 0 26px 26px}
+.top{display:flex;justify-content:space-between;align-items:center}.head h2{margin:16px 0 5px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:white;color:var(--navy);border-radius:16px;padding:12px;margin-top:16px;text-align:center}.stats b{display:block;font-size:21px;margin-top:5px}
+.section{padding:16px 14px 7px;font-weight:bold}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:10px}.tile{background:white;border-radius:15px;overflow:hidden;text-align:center;box-shadow:0 2px 7px #0000000a}.tile .i{padding:17px;font-size:29px}.tile strong{display:block;background:var(--navy);color:white;padding:10px 4px;font-size:12px}
+.panel{background:white;margin:12px;padding:14px;border-radius:15px}.bottom{position:fixed;bottom:0;left:0;right:0;background:var(--navy);display:flex;justify-content:space-around;padding:12px;z-index:4}.bottom button{color:white;background:none;border:0;font-size:13px}
+.modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;padding:14px;z-index:10}.modal.show{display:flex}.box{background:white;border-radius:18px;padding:18px;max-height:90vh;overflow:auto;width:100%;max-width:460px;color:#1b2d64}
+input,select,textarea{width:100%;padding:12px;margin:6px 0;border:1px solid #d8deeb;border-radius:9px;font:inherit}button{cursor:pointer}.action{width:100%;padding:12px;border:0;border-radius:10px;background:var(--navy);color:white;margin:5px 0;font:inherit}.muted{color:#71809e;font-size:12px}.item{padding:12px 2px;border-bottom:1px solid #edf0f5}.pill{display:inline-block;padding:4px 9px;border-radius:20px;background:#e9efff;color:#24428b;font-size:12px}.notice{padding:10px;border-radius:10px;background:#edf7f0;margin:8px 0}.danger{background:#fff0f0;color:#a52c35}.hidden{display:none}
+@media(max-width:360px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body>
+<header class="head"><div class="top"><b>سداد لينك</b><button style="background:transparent;color:white;border:0" onclick="account()">☰ حسابي</button></div>
+<h2 id="welcome">مرحباً بك في سداد لينك</h2><div id="phone" class="muted" style="color:#dce5ff">خدمات السداد وشحن المحفظة</div>
+<div class="stats"><div>رصيدي<b id="balance">—</b><small>ريال</small></div><div>الطلبات<b id="requests">0</b></div><div>العمليات<b id="operations">0</b></div></div></header>
+<div class="section">الخدمات</div>
+<section class="grid">
+<div class="tile" onclick="networks()"><div class="i">📶</div><strong>شبكات الإنترنت</strong></div>
+<div class="tile" onclick="telecoms()"><div class="i">📱</div><strong>شركات الاتصالات</strong></div>
+<div class="tile" onclick="billForm()"><div class="i">💧</div><strong>الماء والكهرباء</strong></div>
+<div class="tile" onclick="topup()"><div class="i">➕</div><strong>شحن المحفظة</strong></div>
+<div class="tile" onclick="otherServices()"><div class="i">🛍️</div><strong>خدمات أخرى</strong></div>
+<div class="tile" onclick="notifications()"><div class="i">🔔</div><strong>الإشعارات</strong></div>
+</section>
+<div class="section">آخر الإشعارات</div><div class="panel" id="latest">سجل الدخول لمتابعة إشعاراتك.</div>
+<nav class="bottom"><button onclick="account()">حسابي</button><button onclick="history()">سجل العمليات</button><button onclick="refresh()">الرئيسية</button></nav>
+<div class="modal" id="modal"><div class="box"><h3 id="modalTitle"></h3><div id="modalBody"></div><button class="action" onclick="closeModal()">إغلاق</button></div></div>
+<script>
+let me=null, cache={};
+const $=id=>document.getElementById(id);
+async function api(path,body){let r=await fetch('/api/'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},credentials:'include',body:body?JSON.stringify(body):undefined});let j=await r.json();if(!r.ok)throw Error(j.error||'تعذر تنفيذ الطلب');return j}
+function modal(t,h){$('modalTitle').textContent=t;$('modalBody').innerHTML=h;$('modal').classList.add('show')}
+function closeModal(){$('modal').classList.remove('show')}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function money(n){return Number(n||0).toLocaleString('ar-YE')}
+async function refresh(){try{let d=await api('me');me=d.user;cache=d; $('welcome').textContent=me?'مرحباً '+me.name:'مرحباً بك في سداد لينك';$('phone').textContent=me?me.phone:'خدمات السداد وشحن المحفظة';$('balance').textContent=me?money(me.balance):'—';$('requests').textContent=me?d.pendingCount:0;$('operations').textContent=me?d.orderCount:0;$('latest').innerHTML=me?(d.notifications.slice(0,3).map(n=>`<div class="item"><b>${esc(n.title)}</b><div>${esc(n.message)}</div><small class="muted">${esc(n.createdAtText||'')}</small></div>`).join('')||'لا توجد إشعارات جديدة'):'سجل الدخول لعرض رصيدك وإشعاراتك.'}catch(e){$('latest').textContent='تعذر الاتصال بالخادم حالياً'}}
+function account(){modal('حسابي',me?`<div class="notice">مرحباً ${esc(me.name)}<br>رصيدك: <b>${money(me.balance)} ريال</b></div><button class="action" onclick="topup()">شحن المحفظة</button><button class="action" onclick="notifications()">الإشعارات والردود</button><button class="action" onclick="logout()">تسجيل الخروج</button>`:`<button class="action" onclick="loginForm()">تسجيل الدخول</button><button class="action" onclick="registerForm()">إنشاء حساب جديد</button>`)}
+function loginForm(){modal('تسجيل الدخول',`<input id="username" placeholder="اسم المستخدم" autocomplete="username"><input id="password" type="password" placeholder="كلمة المرور" autocomplete="current-password"><button class="action" onclick="login()">دخول</button>`)}
+function registerForm(){modal('إنشاء حساب',`<input id="name" placeholder="الاسم الكامل"><input id="phoneInput" placeholder="رقم الهاتف"><input id="username" placeholder="اسم المستخدم"><input id="password" type="password" placeholder="كلمة المرور"><button class="action" onclick="register()">إنشاء الحساب</button>`)}
+async function login(){try{await api('auth/login',{username:$('username').value,password:$('password').value});closeModal();await refresh()}catch(e){alert(e.message)}}
+async function register(){try{await api('auth/register',{name:$('name').value,phone:$('phoneInput').value,username:$('username').value,password:$('password').value});closeModal();await refresh();alert('تم إنشاء حسابك بنجاح')}catch(e){alert(e.message)}}
+async function logout(){try{await api('auth/logout',{})}catch{}me=null;closeModal();refresh()}
+function needLogin(){if(!me){loginForm();return false}return true}
+function topup(){if(!needLogin())return;modal('طلب شحن المحفظة',`<input id="amount" type="number" min="1" placeholder="المبلغ بالريال"><input id="reference" placeholder="رقم الحوالة أو المرجع"><textarea id="note" placeholder="ملاحظات إضافية (اختياري)"></textarea><button class="action" onclick="sendTopup()">إرسال طلب الشحن</button><p class="muted">سيظهر الطلب في لوحة التحكم، ويصل إليك إشعار عند الرد عليه.</p>`)}
+async function sendTopup(){try{await api('topups',{amount:+$('amount').value,reference:$('reference').value,note:$('note').value});closeModal();await refresh();alert('تم إرسال طلب الشحن للإدارة')}catch(e){alert(e.message)}}
+async function networks(){try{let d=await api('catalog');cache=d;modal('شبكات الإنترنت',d.networks.map(n=>`<div class="item"><b>${esc(n.name)}</b>${n.plans.map(p=>`<div class="item">${esc(p.name)} · ${esc(p.volume)} · ${esc(p.validity)} · ${money(p.price)} ريال <span class="pill">المتاح ${p.stock}</span><button class="action" onclick="buyNetwork('${n.id}','${p.id}')">شراء</button></div>`).join('')}</div>`).join('')||'لا توجد شبكات متاحة')}catch(e){alert(e.message)}}
+async function buyNetwork(networkId,planId){let q=prompt('كمية الكروت المطلوبة؟','1');if(q===null)return;try{let r=await api('purchase/network',{networkId,planId,quantity:+q});modal('تم الشراء',r.cards.map(c=>`<div class="notice">اسم المستخدم: <b>${esc(c.username)}</b>${c.password?'<br>كلمة المرور: <b>'+esc(c.password)+'</b>':''}</div>`).join(''));await refresh()}catch(e){alert(e.message)}}
+async function telecoms(){try{let d=await api('catalog');modal('شركات الاتصالات',d.telecoms.map(t=>`<h4>${esc(t.name)}</h4>${t.packages.map(p=>`<div class="item">${esc(p.name)} · ${esc(p.category)} · ${money(p.price)} ريال<button class="action" onclick="buyTel('${t.id}','${p.id}')">اختيار الباقة</button></div>`).join('')}`).join('')||'لا توجد باقات حالياً')}catch(e){alert(e.message)}}
+async function buyTel(companyId,packageId){let target=prompt('أدخل رقم الهاتف المراد شحنه');if(!target)return;try{await api('purchase/telecom',{companyId,packageId,target});closeModal();await refresh();alert('تم تسجيل طلب الشحن وسيصلك إشعار عند تنفيذه')}catch(e){alert(e.message)}}
+function billForm(){if(!needLogin())return;modal('تسديد الماء والكهرباء',`<select id="billType"><option>ماء</option><option>كهرباء</option></select><input id="area" placeholder="المنطقة / المؤسسة"><input id="subscriber" placeholder="رقم الاشتراك أو العداد"><input id="invoice" placeholder="رقم الفاتورة"><input id="billAmount" type="number" min="1" placeholder="المبلغ"><button class="action" onclick="sendBill()">إرسال طلب التسديد</button>`)}
+async function sendBill(){try{await api('bills',{service:$('billType').value,area:$('area').value,subscriber:$('subscriber').value,invoice:$('invoice').value,amount:+$('billAmount').value});closeModal();await refresh();alert('تم إرسال طلب التسديد للمراجعة')}catch(e){alert(e.message)}}
+async function otherServices(){try{let d=await api('catalog');modal('خدمات أخرى',d.services.map(s=>`<div class="item">${esc(s.name)} · ${money(s.price)} ريال <button class="action" onclick="buyService('${s.id}')">طلب الخدمة</button></div>`).join('')||'لا توجد خدمات')}catch(e){alert(e.message)}}
+async function buyService(id){let details=prompt('أدخل تفاصيل الطلب');if(details===null)return;try{await api('purchase/service',{serviceId:id,details});closeModal();await refresh();alert('تم إرسال الطلب')}catch(e){alert(e.message)}}
+async function notifications(){if(!needLogin())return;try{let d=await api('notifications');modal('الإشعارات والردود',d.items.map(n=>`<div class="item"><b>${esc(n.title)}</b><p>${esc(n.message)}</p><small class="muted">${esc(n.createdAtText||'')}</small></div>`).join('')||'لا توجد إشعارات')}catch(e){alert(e.message)}}
+async function history(){if(!needLogin())return;try{let d=await api('history');modal('سجل العمليات',d.items.map(o=>`<div class="item"><b>${esc(o.title)}</b><br>${money(o.amount)} ريال · <span class="pill">${esc(o.status)}</span><p>${esc(o.details||'')}</p></div>`).join('')||'لا توجد عمليات')}catch(e){alert(e.message)}}
+refresh();
+</script></body></html>
