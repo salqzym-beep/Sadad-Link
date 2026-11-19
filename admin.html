@@ -11,6 +11,18 @@ document.addEventListener('click',async e=>{if(e.target?.id==='installApp'&&admi
 const $=id=>document.getElementById(id);let currentSection='dashboard';
 const FIREBASE_CONFIG={"apiKey":"AIzaSyA3pMamlAshPO6Etf2nUmd2eG0Y_YeEVck","authDomain":"sadad-link.firebaseapp.com","projectId":"sadad-link","storageBucket":"sadad-link.firebasestorage.app","messagingSenderId":"587216423024","appId":"1:587216423024:web:9f6efc1c12350895b3ccb5"};
 const ADMIN_VAPID_KEY='BBN3zV2ThoYLDFZl_VVkIqljLSCzRvfjoEvAGAxZTqifAYTNhBLSifdlDsQggIpqEGKNxK3BrFyKSDqUPhgJa6U';
+async function checkAdminPushStatus(){
+ const status=$('pushStatus'),btn=$('enablePush');
+ try{
+  if(!('Notification' in window)||Notification.permission!=='granted'||!firebase.messaging.isSupported())return;
+  if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+  const registration=await navigator.serviceWorker.register('/admin-sw.js');
+  const token=await firebase.messaging().getToken({vapidKey:ADMIN_VAPID_KEY,serviceWorkerRegistration:registration});
+  if(!token)return;
+  const result=await api('admin/push-status',{token});
+  if(result.enabled){status.textContent='الإشعارات مفعّلة على هذا الجهاز';btn.textContent='الإشعارات مفعّلة';btn.disabled=true}
+ }catch(e){console.warn('Push status check:',e.message)}
+}
 async function enableAdminPush(){
  const btn=$('enablePush'),status=$('pushStatus');
  try{
@@ -24,7 +36,7 @@ async function enableAdminPush(){
   const token=await messaging.getToken({vapidKey:ADMIN_VAPID_KEY,serviceWorkerRegistration:registration});
   if(!token)throw Error('تعذر إنشاء رمز الإشعارات');
   await api('admin/push-token',{token});
-  status.textContent='تم تفعيل الإشعارات على هذا الجهاز';
+  status.textContent='تم تفعيل الإشعارات على هذا الجهاز';localStorage.setItem('sadadAdminPushEnabled','1');
   btn.textContent='تم التفعيل';btn.disabled=false;
   messaging.onMessage(payload=>{const n=payload.notification||{};if(Notification.permission==='granted')new Notification(n.title||'سداد لينك', {body:n.body||'لديك تحديث جديد',icon:'/admin-icon.svg'})});
  }catch(e){status.textContent=e.message;btn.disabled=false;alert(e.message)}
@@ -37,7 +49,7 @@ async function init(){try{let s=await api('admin/status');if(!s.initialized){$('
 async function bootstrap(){try{await api('admin/bootstrap',{name:$('name').value,username:$('u').value,password:$('p').value});await init()}catch(e){alert(e.message)}}
 async function doLogin(){try{await api('admin/login',{username:$('u').value,password:$('p').value});render()}catch(e){alert(e.message)}}
 function applyAdminAppearance(v){const r=document.documentElement.style;[['--primary',v.primary],['--secondary',v.secondary],['--pagebg',v.background],['--textcolor',v.text],['--fontfamily',v.font||'Arial'],['--cardcolor',v.card],['--buttontext',v.buttonText],['--navcolor',v.nav],['--navtext',v.navText],['--tilecolor',v.tileLabel],['--bordercolor',v.border],['--mutedcolor',v.muted],['--successcolor',v.success],['--dangercolor',v.danger],['--selectedcolor',v.danger]].forEach(([k,x])=>r.setProperty(k,x||''));document.body.style.background=v.background;document.body.style.color=v.text;document.body.style.fontFamily=v.font||'Arial'}
-function render(){const ps=$('pushSetup');if(ps)ps.style.display='block';api('appearance').then(applyAdminAppearance).catch(()=>{}); $('app').innerHTML=`<section class="grid"><div><b>لوحة التحكم</b><div class="muted">مرحباً بك في إدارة سداد لينك</div></div><button onclick="logout()">تسجيل الخروج</button></section><div class="tabs"><button onclick="section('dashboard')">الرئيسية</button><button onclick="section('topups')">طلبات شحن الرصيد</button><button onclick="section('banks')">حسابات التحويل البنكي</button><button onclick="section('networks')">الشبكات والكروت</button><button onclick="section('telecoms')">الاتصالات والباقات</button><button onclick="section('services')">خدمات أخرى</button><button onclick="section('bills')">الماء والكهرباء</button><button onclick="section('orders')">طلبات الخدمات</button><button onclick="section('userRequests')">طلبات إنشاء الحساب</button><button onclick="section('customers')">العملاء</button><button onclick="section('messages')">إرسال إشعار</button><button onclick="section('admins')">المدراء</button><button onclick="section('settings')">بيانات الدخول</button></div><div id="panel" class="card">جار التحميل...</div>`;section('dashboard')}
+function render(){const ps=$('pushSetup');if(ps)ps.style.display='block';checkAdminPushStatus();api('appearance').then(applyAdminAppearance).catch(()=>{}); $('app').innerHTML=`<section class="grid"><div><b>لوحة التحكم</b><div class="muted">مرحباً بك في إدارة سداد لينك</div></div><button onclick="logout()">تسجيل الخروج</button></section><div class="tabs"><button onclick="section('dashboard')">الرئيسية</button><button onclick="section('topups')">طلبات شحن الرصيد</button><button onclick="section('banks')">حسابات التحويل البنكي</button><button onclick="section('networks')">الشبكات والكروت</button><button onclick="section('telecoms')">الاتصالات والباقات</button><button onclick="section('services')">خدمات أخرى</button><button onclick="section('bills')">الماء والكهرباء</button><button onclick="section('orders')">طلبات الخدمات</button><button onclick="section('userRequests')">طلبات إنشاء الحساب</button><button onclick="section('customers')">العملاء</button><button onclick="section('messages')">إرسال إشعار</button><button onclick="section('admins')">المدراء</button><button onclick="section('settings')">بيانات الدخول</button></div><div id="panel" class="card">جار التحميل...</div>`;section('dashboard')}
 async function section(s){currentSection=s;document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('selected',b.getAttribute('onclick')===`section('${s}')`));let p=$('panel');try{let d;
 if(s==='dashboard'){d=await api('admin/dashboard');p.innerHTML=`<div class="grid">${Object.entries(d).map(([k,v])=>`<section><b>${esc(k)}</b><h2>${esc(v)}</h2></section>`).join('')}</div>`}
 if(s==='banks'){d=await api('admin/bank-accounts');p.innerHTML='<h3>بيانات صاحب الحساب (تُضاف مرة واحدة)</h3><input id="bankOwner" placeholder="اسم صاحب الحساب" value="'+esc(d.profile.owner||'')+'"><input id="bankPhone" placeholder="رقم الجوال مع مفتاح الدولة" value="'+esc(d.profile.phone||'')+'"><button class="ok" onclick="saveBankProfile()">حفظ الاسم ورقم الجوال</button><hr><h3>إضافة حسابات بنكية متعددة</h3><input id="bankId" type="hidden"><input id="bankName" placeholder="اسم البنك"><input id="bankNumber" placeholder="رقم الحساب أو الآيبان"><button class="ok" onclick="saveBankAccount()">حفظ الحساب البنكي</button><button onclick="clearBankAccount()">تفريغ الحقول</button><hr><h3>الحسابات المضافة</h3>'+d.items.map(x=>'<div class="line"><b>'+esc(x.bank)+'</b><br>رقم الحساب: '+esc(x.account)+'<br><button onclick="editBankAccount(\''+x.id+'\',\''+esc(x.bank)+'\',\''+esc(x.account)+'\')">تعديل</button><button class="bad" onclick="deleteBankAccount(\''+x.id+'\')">حذف</button></div>').join('')||'لم تتم إضافة حسابات بنكية بعد'}
