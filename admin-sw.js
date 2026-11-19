@@ -1,7 +1,10 @@
-const CACHE='sadad-admin-shell-v1';
-const SHELL=['/admin.html','/admin.webmanifest','/admin-icon.svg'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL))));
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
+firebase.initializeApp({"apiKey":"AIzaSyA3pMamlAshPO6Etf2nUmd2eG0Y_YeEVck","authDomain":"sadad-link.firebaseapp.com","projectId":"sadad-link","storageBucket":"sadad-link.firebasestorage.app","messagingSenderId":"587216423024","appId":"1:587216423024:web:9f6efc1c12350895b3ccb5"});
+const messaging=firebase.messaging();
+messaging.onBackgroundMessage(payload=>{const n=payload.notification||{};self.registration.showNotification(n.title||'سداد لينك',{body:n.body||'لديك تحديث جديد',icon:'/admin-icon.svg',badge:'/admin-icon.svg',dir:'rtl',data:{url:payload.fcmOptions?.link||'/admin.html'}})});
+const CACHE='sadad-admin-v2';
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/admin.html','/admin.webmanifest','/admin-icon.svg']))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
-self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==location.origin||u.pathname.startsWith('/api/'))return;e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('/admin.html'))))});
-self.addEventListener('push',e=>{let data={title:'سداد لينك',body:'لديك إشعار جديد',url:'/admin.html'};try{data={...data,...e.data.json()}}catch{}e.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'/admin-icon.svg',badge:'/admin-icon.svg',data:{url:data.url||'/admin.html'},dir:'rtl',lang:'ar'}))});
-self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list){if('focus'in c){c.navigate(e.notification.data?.url||'/admin.html');return c.focus()}}return clients.openWindow(e.notification.data?.url||'/admin.html')}))});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin||new URL(e.request.url).pathname.startsWith('/api/'))return;e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}return r}).catch(()=>caches.match(e.request)))});
+self.addEventListener('notificationclick',e=>{e.notification.close();const url=e.notification.data?.url||'/admin.html';e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list){if('focus'in c){c.navigate(url);return c.focus()}}return clients.openWindow(url)}))});
