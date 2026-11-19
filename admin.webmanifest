@@ -1,16 +1,21 @@
 {
-  "id": "/admin.html",
-  "name": "سداد لينك - لوحة الإدارة",
-  "short_name": "سداد الإدارة",
-  "description": "لوحة إدارة سداد لينك",
+  "id": "/",
+  "name": "سداد لينك",
+  "short_name": "سداد لينك",
+  "description": "الصفحة الرئيسية لخدمات سداد لينك",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "/admin.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#eef2f8",
   "theme_color": "#192f70",
   "icons": [
-    {"src": "/admin-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+    {
+      "src": "/admin-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
