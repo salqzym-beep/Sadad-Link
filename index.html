@@ -27,7 +27,7 @@ input,select,textarea{width:100%;padding:12px;margin:6px 0;border:1px solid var(
 <div class="tile" onclick="otherServices()"><div class="i">🛍️</div><strong>خدمات أخرى</strong></div>
 <div class="tile" onclick="notifications()"><div class="i">🔔</div><strong>الإشعارات</strong></div>
 </section>
-<div class="section">آخر الإشعارات</div><div class="panel" id="latest">سجل الدخول لمتابعة إشعاراتك.</div>
+<div class="section hidden" id="latestTitle">آخر الإشعارات</div><div class="panel hidden" id="latest">سجل الدخول لمتابعة إشعاراتك.</div>
 <nav class="bottom"><button onclick="account()">حسابي</button><button onclick="history()">سجل العمليات</button><button onclick="refresh()">الرئيسية</button></nav>
 <div class="modal" id="modal"><div class="box"><h3 id="modalTitle"></h3><div id="modalBody"></div><button class="action" onclick="closeModal()">إغلاق</button></div></div>
 <script>
@@ -61,7 +61,7 @@ function billForm(){if(!needLogin())return;modal('تسديد الماء والك
 async function sendBill(){try{await api('bills',{service:$('billType').value,area:$('area').value,subscriber:$('subscriber').value,invoice:$('invoice').value,amount:+$('billAmount').value});closeModal();await refresh();alert('تم إرسال طلب التسديد للمراجعة')}catch(e){alert(e.message)}}
 async function otherServices(){if(!needLogin())return;try{let d=await api('catalog');const services=d.services||[];modal('خدمات أخرى',services.map(x=>'<div class="item"><b>'+esc(x.name)+'</b><br>'+(x.kind==='tiktok'?(x.coins||0)+' عملة تيك توك · ':'')+x.price+' '+(x.currency==='USD'?'دولار':'ريال يمني')+'<button class="action" onclick="buyService(\''+x.id+'\',\''+x.kind+'\')">طلب الخدمة</button></div>').join('')||'لا توجد خدمات حالياً')}catch(e){alert(e.message)}}
 async function buyService(id,kind){let player='';if(kind==='tiktok'){player=prompt('أدخل اسم اللاعب في تيك توك');if(player===null||!player.trim())return}else{player=prompt('أدخل تفاصيل الطلب');if(player===null)return}try{await api('purchase/service',{serviceId:id,player,details:player});closeModal();await refresh();alert('تم إرسال طلبك بنجاح')}catch(e){alert(e.message)}}
-async function notifications(){if(!needLogin())return;try{let d=await api('notifications');modal('الإشعارات والردود',d.items.map(n=>`<div class="item"><b>${esc(n.title)}</b><p>${esc(n.message)}</p><small class="muted">${esc(n.createdAtText||'')}</small></div>`).join('')||'لا توجد إشعارات')}catch(e){alert(e.message)}}
+async function notifications(){try{if(!me)await refresh();if(!me){loginForm();return}let d=await api('notifications');modal('الإشعارات والردود',d.items.map(n=>`<div class="item"><b>${esc(n.title)}</b><p>${esc(n.message)}</p><small class="muted">${esc(n.createdAtText||'')}</small></div>`).join('')||'لا توجد إشعارات')}catch(e){alert(e.message)}}
 async function history(){if(!needLogin())return;try{let d=await api('history');modal('سجل العمليات',d.items.map(o=>`<div class="item"><b>${esc(o.title)}</b><br>${money(o.amount)} ريال · <span class="pill">${esc(o.status)}</span><p>${esc(o.details||'')}</p></div>`).join('')||'لا توجد عمليات')}catch(e){alert(e.message)}}
 applyAppearance();refresh();
 </script></body></html>
